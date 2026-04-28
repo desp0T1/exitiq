@@ -1,0 +1,1462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ExitIQ — Board Smarter</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --surface2: #1c1c26;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.14);
+    --accent: #00e5a0;
+    --accent2: #00b87a;
+    --accent-dim: rgba(0,229,160,0.12);
+    --text: #f0f0f5;
+    --muted: #7a7a8c;
+    --muted2: #4a4a5e;
+    --danger: #ff5c5c;
+    --warning: #ffb84d;
+    --yellow: #ffe666;
+    --orange: #ff8c42;
+    --blue: #4d9fff;
+    --purple: #a78bfa;
+    --mono: 'Space Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* ── GRID OVERLAY ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,160,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,160,0.025) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app { position: relative; z-index: 1; width: 100%; max-width: 420px; min-height: 100vh; display: flex; flex-direction: column; }
+
+  /* ── HEADER ── */
+  header {
+    padding: 28px 24px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logo-mark {
+    width: 36px; height: 36px;
+    background: var(--accent);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 700;
+    color: #000;
+    letter-spacing: -1px;
+  }
+
+  .logo-text {
+    font-family: var(--mono);
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.5px;
+  }
+
+  .logo-text span { color: var(--accent); }
+
+  .badge {
+    font-family: var(--mono);
+    font-size: 10px;
+    background: var(--accent-dim);
+    color: var(--accent);
+    border: 1px solid rgba(0,229,160,0.3);
+    padding: 4px 10px;
+    border-radius: 20px;
+    letter-spacing: 1px;
+  }
+
+  /* ── SEARCH PANEL ── */
+  .panel {
+    margin: 0 16px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 20px;
+    padding: 20px;
+  }
+
+  .panel-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  .route-inputs { display: flex; flex-direction: column; gap: 10px; }
+
+  .input-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 16px;
+    transition: border-color 0.2s;
+    cursor: pointer;
+  }
+
+  .input-row:hover, .input-row.active { border-color: var(--border2); }
+  .input-row.focused { border-color: rgba(0,229,160,0.5); }
+
+  .dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .dot-from { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+  .dot-to { background: var(--blue); box-shadow: 0 0 8px var(--blue); }
+
+  .input-row input {
+    background: none;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 500;
+    width: 100%;
+  }
+
+  .input-row input::placeholder { color: var(--muted); font-weight: 400; }
+
+  .connector {
+    display: flex;
+    align-items: center;
+    padding: 0 28px;
+    position: relative;
+    height: 10px;
+  }
+
+  .connector-line {
+    position: absolute;
+    left: 22px;
+    width: 2px;
+    height: 20px;
+    background: linear-gradient(to bottom, var(--accent), var(--blue));
+    top: -5px;
+    border-radius: 2px;
+  }
+
+  .swap-btn {
+    position: absolute;
+    right: 16px;
+    width: 30px; height: 30px;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    color: var(--muted);
+    font-size: 14px;
+    top: -10px;
+    transition: all 0.2s;
+  }
+
+  .swap-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .go-btn {
+    width: 100%;
+    margin-top: 16px;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 12px;
+    padding: 15px;
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .go-btn:hover { background: #00ffb3; transform: translateY(-1px); }
+  .go-btn:active { transform: translateY(0); }
+
+  /* ── QUICK ROUTES ── */
+  .quick-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 0 24px;
+    margin-bottom: 10px;
+  }
+
+  .quick-routes {
+    display: flex;
+    gap: 8px;
+    padding: 0 16px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    margin-bottom: 20px;
+  }
+
+  .quick-routes::-webkit-scrollbar { display: none; }
+
+  .quick-chip {
+    flex-shrink: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 8px 14px;
+    font-size: 12px;
+    color: var(--muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .quick-chip:hover { border-color: var(--border2); color: var(--text); }
+  .quick-chip .line-badge { width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; font-family: var(--mono); }
+
+  /* ── RESULT CARD ── */
+  .result { margin: 0 16px 16px; display: none; }
+  .result.show { display: block; animation: slideUp 0.4s ease; }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .result-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+
+  .route-summary {
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .route-summary strong { color: var(--text); font-weight: 600; }
+
+  .time-save {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    background: var(--accent-dim);
+    border: 1px solid rgba(0,229,160,0.2);
+    padding: 4px 10px;
+    border-radius: 20px;
+  }
+
+
+  /* ── SAVED ROUTES ── */
+  .save-route-btn { background: var(--surface); border: 1px solid var(--border2); color: var(--text); border-radius: 20px; padding: 5px 10px; font-family: var(--mono); font-size: 10px; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+  .save-route-btn:hover, .save-route-btn.saved { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+  .saved-section { display: none; margin: 0 16px 16px; animation: slideUp 0.3s ease; }
+  .saved-section.show { display: block; }
+  .saved-header-card { background: var(--surface); border: 1px solid var(--border2); border-radius: 20px; padding: 18px 20px; margin-bottom: 12px; }
+  .saved-title { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+  .saved-subtitle { font-size: 12px; color: var(--muted); line-height: 1.45; }
+  .saved-list { display: flex; flex-direction: column; gap: 10px; }
+  .saved-route-card { background: var(--surface); border: 1px solid var(--border2); border-radius: 18px; padding: 14px 16px; cursor: pointer; transition: all 0.2s; }
+  .saved-route-card:hover { border-color: rgba(0,229,160,0.35); transform: translateY(-1px); }
+  .saved-route-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+  .saved-route-name { font-size: 13px; font-weight: 600; line-height: 1.35; }
+  .saved-route-meta { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--muted); }
+  .remove-saved-btn { background: transparent; border: 1px solid var(--border); color: var(--muted); border-radius: 10px; padding: 5px 8px; cursor: pointer; transition: all 0.2s; }
+  .remove-saved-btn:hover { color: var(--danger); border-color: rgba(255,92,92,0.35); }
+  .empty-saved { background: var(--surface); border: 1px dashed var(--border2); border-radius: 18px; padding: 24px 18px; text-align: center; color: var(--muted); font-size: 13px; line-height: 1.5; }
+
+
+  /* ── CONFIDENCE CARD ── */
+  .confidence-card {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 18px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+  }
+  .confidence-left { min-width: 0; }
+  .confidence-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--muted);
+    letter-spacing: 1.6px;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+  }
+  .confidence-source {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.45;
+  }
+  .confidence-pill {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 7px 12px;
+    border-radius: 999px;
+    flex-shrink: 0;
+  }
+  .confidence-pill.high {
+    color: var(--accent);
+    background: var(--accent-dim);
+    border: 1px solid rgba(0,229,160,0.35);
+  }
+  .confidence-pill.medium {
+    color: var(--warning);
+    background: rgba(255,184,77,0.12);
+    border: 1px solid rgba(255,184,77,0.35);
+  }
+
+
+  /* ── RIDER FEEDBACK ── */
+  .feedback-card {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 20px;
+    padding: 18px 20px;
+    margin-top: 12px;
+    margin-bottom: 12px;
+  }
+  .feedback-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .feedback-title { font-size: 14px; font-weight: 700; }
+  .feedback-subtitle { font-size: 12px; color: var(--muted); line-height: 1.45; margin-top: 3px; }
+  .feedback-actions { display: flex; gap: 8px; flex-shrink: 0; }
+  .feedback-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    color: var(--text);
+    border-radius: 14px;
+    padding: 9px 12px;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .feedback-btn:hover { border-color: rgba(0,229,160,0.35); color: var(--accent); transform: translateY(-1px); }
+  .feedback-btn.selected { background: var(--accent-dim); border-color: rgba(0,229,160,0.45); color: var(--accent); }
+  .feedback-message {
+    display: none;
+    border-top: 1px solid var(--border);
+    padding-top: 12px;
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.45;
+  }
+  .feedback-message.show { display: block; }
+
+  /* ── TRAIN CAR DIAGRAM ── */
+  .train-diagram-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 20px;
+    padding: 20px;
+    margin-bottom: 12px;
+  }
+
+  .diagram-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .direction-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+
+  .direction-tag {
+    font-size: 12px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .direction-tag .arr { color: var(--accent); font-size: 14px; }
+
+  .train-cars {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding-bottom: 4px;
+  }
+
+  .train-cars::-webkit-scrollbar { display: none; }
+
+  .train-head {
+    width: 24px;
+    height: 52px;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 12px 4px 4px 12px;
+    flex-shrink: 0;
+    position: relative;
+  }
+
+  .train-head::after {
+    content: '';
+    position: absolute;
+    right: -8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0;
+    height: 0;
+    border-left: 8px solid var(--border2);
+    border-top: 6px solid transparent;
+    border-bottom: 6px solid transparent;
+  }
+
+  .car {
+    height: 52px;
+    min-width: 44px;
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .car:hover { border-color: var(--border2); background: var(--surface); }
+
+  .car.optimal {
+    background: rgba(0,229,160,0.15);
+    border: 1.5px solid var(--accent);
+    box-shadow: 0 0 16px rgba(0,229,160,0.15);
+  }
+
+  .car.good {
+    background: rgba(77,159,255,0.1);
+    border-color: rgba(77,159,255,0.4);
+  }
+
+  .car-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+  }
+
+  .car.optimal .car-num { color: var(--accent); }
+  .car.good .car-num { color: var(--blue); }
+
+  .car-icon { font-size: 12px; }
+
+  .optimal-badge {
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--accent);
+    color: #000;
+    font-family: var(--mono);
+    font-size: 8px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 10px;
+    white-space: nowrap;
+    letter-spacing: 0.5px;
+  }
+
+  /* ── PLATFORM DIAGRAM ── */
+  .platform-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 20px;
+    padding: 20px;
+    margin-bottom: 12px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .platform-track {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    margin: 20px 0 10px;
+  }
+
+  .track-line {
+    position: absolute;
+    left: 0; right: 0;
+    height: 3px;
+    background: var(--surface2);
+    border-radius: 2px;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  .exit-marker {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .exit-dot {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    border: 2px solid var(--surface2);
+  }
+
+  .exit-name {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--muted);
+    text-align: center;
+    max-width: 50px;
+  }
+
+  .you-marker {
+    position: relative;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .you-pin {
+    width: 24px; height: 24px;
+    background: var(--accent);
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    box-shadow: 0 0 12px rgba(0,229,160,0.5);
+    position: relative;
+  }
+
+  .you-pin::after {
+    content: '';
+    position: absolute;
+    width: 10px; height: 10px;
+    background: #000;
+    border-radius: 50%;
+    top: 7px; left: 7px;
+  }
+
+  .you-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--accent);
+    font-weight: 700;
+    letter-spacing: 1px;
+    margin-top: 2px;
+  }
+
+  /* ── STEPS ── */
+  .steps {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 20px;
+    overflow: hidden;
+  }
+
+  .step {
+    display: flex;
+    gap: 14px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    align-items: flex-start;
+  }
+
+  .step:last-child { border-bottom: none; }
+
+  .step-num {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    flex-shrink: 0;
+    font-weight: 700;
+  }
+
+  .step-content {}
+  .step-title { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+  .step-sub { font-size: 12px; color: var(--muted); line-height: 1.5; }
+  .step-sub strong { color: var(--accent); font-weight: 600; }
+
+  /* ── BOTTOM NAV ── */
+  .bottom-nav {
+    margin-top: auto;
+    padding: 16px 24px 28px;
+    display: flex;
+    justify-content: space-around;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    padding: 8px 16px;
+    border-radius: 12px;
+    transition: background 0.2s;
+  }
+
+  .nav-item:hover { background: var(--surface2); }
+  .nav-item.active { background: var(--accent-dim); }
+
+  .nav-icon { font-size: 20px; }
+  .nav-label { font-size: 10px; color: var(--muted); font-family: var(--mono); letter-spacing: 0.5px; }
+  .nav-item.active .nav-label { color: var(--accent); }
+
+  /* ── LINE COLORS ── */
+  .line-4 { background: #00933c; color: #fff; }
+  .line-5 { background: #00933c; color: #fff; }
+  .line-6 { background: #00933c; color: #fff; }
+  .line-N { background: #fccc0a; color: #000; }
+  .line-Q { background: #fccc0a; color: #000; }
+  .line-R { background: #fccc0a; color: #000; }
+  .line-W { background: #fccc0a; color: #000; }
+  .line-A { background: #0039a6; color: #fff; }
+  .line-C { background: #0039a6; color: #fff; }
+  .line-E { background: #0039a6; color: #fff; }
+  .line-L { background: #a7a9ac; color: #000; }
+  .line-1 { background: #ee352e; color: #fff; }
+  .line-2 { background: #ee352e; color: #fff; }
+  .line-3 { background: #ee352e; color: #fff; }
+
+  /* ── LOADING ── */
+  .loading {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 40px 0;
+  }
+
+  .loading.show { display: flex; }
+
+  .loader {
+    width: 40px; height: 40px;
+    border: 2px solid var(--border2);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-text {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  /* ── SUGGESTIONS DROPDOWN ── */
+  .suggestions {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0; right: 0;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 12px;
+    overflow: hidden;
+    z-index: 10;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+
+  .suggestions.show { display: block; }
+
+  .suggestion-item {
+    padding: 12px 16px;
+    font-size: 13px;
+    color: var(--text);
+    cursor: pointer;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+  }
+
+  .suggestion-item:last-child { border-bottom: none; }
+  .suggestion-item:hover { background: var(--surface); }
+
+  .suggestion-item .s-icon { font-size: 14px; color: var(--muted); }
+  .suggestion-item .s-name { font-weight: 500; }
+  .suggestion-item .s-line { font-size: 11px; color: var(--muted); margin-left: auto; font-family: var(--mono); }
+
+  .input-wrap { position: relative; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- HEADER -->
+  <header>
+    <div class="logo">
+      <div class="logo-mark">EQ</div>
+      <div class="logo-text">Exit<span>IQ</span></div>
+    </div>
+    <div class="badge">NYC BETA</div>
+  </header>
+
+  <!-- SEARCH PANEL -->
+  <div class="panel">
+    <div class="panel-label">Plan your ride</div>
+    <div class="route-inputs">
+
+      <div class="input-wrap" id="from-wrap">
+        <div class="input-row" id="from-row">
+          <div class="dot dot-from"></div>
+          <input type="text" id="from-input" placeholder="From station..." autocomplete="off" />
+        </div>
+        <div class="suggestions" id="from-suggestions"></div>
+      </div>
+
+      <div class="connector">
+        <div class="connector-line"></div>
+        <div class="swap-btn" id="swap-btn" title="Swap stations">⇅</div>
+      </div>
+
+      <div class="input-wrap" id="to-wrap">
+        <div class="input-row" id="to-row">
+          <div class="dot dot-to"></div>
+          <input type="text" id="to-input" placeholder="To station..." autocomplete="off" />
+        </div>
+        <div class="suggestions" id="to-suggestions"></div>
+      </div>
+
+    </div>
+    <button class="go-btn" id="go-btn">FIND OPTIMAL CAR →</button>
+  </div>
+
+  <!-- QUICK ROUTES -->
+  <div class="quick-label">Frequent routes</div>
+  <div class="quick-routes" id="quick-routes"></div>
+
+
+  <!-- SAVED ROUTES SECTION -->
+  <div class="saved-section" id="saved-section">
+    <div class="saved-header-card">
+      <div class="saved-title">Saved routes</div>
+      <div class="saved-subtitle">Your daily trips stay here for one-tap access. This MVP saves them locally in your browser.</div>
+    </div>
+    <div class="saved-list" id="saved-list"></div>
+  </div>
+
+  <!-- LOADING -->
+  <div class="loading" id="loading">
+    <div class="loader"></div>
+    <div class="loading-text">CALCULATING OPTIMAL CAR...</div>
+  </div>
+
+  <!-- RESULT -->
+  <div class="result" id="result">
+
+    <div class="result-header">
+      <div class="route-summary">
+        <strong id="res-from-name">—</strong> → <strong id="res-to-name">—</strong>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button class="save-route-btn" id="save-route-btn">☆ SAVE</button>
+        <div class="time-save" id="res-time-save">~45s saved</div>
+      </div>
+    </div>
+
+
+    <!-- RECOMMENDATION CONFIDENCE -->
+    <div class="confidence-card" id="confidence-card">
+      <div class="confidence-left">
+        <div class="confidence-label">Recommendation confidence</div>
+        <div class="confidence-source" id="confidence-source">Verified beta route. Manually added route logic for the NYC beta.</div>
+      </div>
+      <div class="confidence-pill high" id="confidence-level">HIGH</div>
+    </div>
+
+    <!-- TRAIN CAR DIAGRAM -->
+    <div class="train-diagram-wrap">
+      <div class="diagram-label">Train car selection</div>
+      <div class="direction-row">
+        <div class="direction-tag"><span class="arr">→</span> <span id="res-direction">Uptown</span></div>
+        <div class="direction-tag" style="font-family:var(--mono);font-size:11px;color:var(--muted);">
+          <span id="res-line-badge" style="width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;margin-right:4px;"></span>
+          <span id="res-line-name"></span>
+        </div>
+      </div>
+      <div class="train-cars" id="train-cars"></div>
+      <div style="display:flex;gap:16px;margin-top:14px;">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <div style="width:10px;height:10px;background:rgba(0,229,160,0.5);border:1px solid var(--accent);border-radius:2px;"></div>
+          <span style="font-size:11px;color:var(--muted);">Optimal car</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <div style="width:10px;height:10px;background:rgba(77,159,255,0.2);border:1px solid rgba(77,159,255,0.4);border-radius:2px;"></div>
+          <span style="font-size:11px;color:var(--muted);">Also good</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- PLATFORM DIAGRAM -->
+    <div class="platform-wrap">
+      <div class="diagram-label">Platform boarding position</div>
+      <div class="platform-track">
+        <div class="track-line"></div>
+        <div class="exit-marker" id="exit-start">
+          <div class="exit-dot" style="background:var(--muted2);"></div>
+          <div class="exit-name" id="exit-start-name">Exit A</div>
+        </div>
+        <div class="you-marker" id="you-marker">
+          <div class="you-pin"></div>
+          <div class="you-label">YOU</div>
+        </div>
+        <div class="exit-marker" id="exit-end">
+          <div class="exit-dot" style="background:var(--accent);"></div>
+          <div class="exit-name" id="exit-end-name">Target exit</div>
+        </div>
+      </div>
+      <p style="font-size:12px;color:var(--muted);margin-top:8px;" id="platform-tip">Stand near the front of the platform for fastest exit.</p>
+    </div>
+
+    <!-- STEP BY STEP -->
+    <div class="steps" id="steps"></div>
+
+    <!-- RIDER CONFIRMATION -->
+    <div class="feedback-card" id="feedback-card">
+      <div class="feedback-top">
+        <div>
+          <div class="feedback-title">Was this accurate?</div>
+          <div class="feedback-subtitle">Your answer helps ExitIQ improve this route for future riders.</div>
+        </div>
+        <div class="feedback-actions">
+          <button class="feedback-btn" id="feedback-yes">👍 YES</button>
+          <button class="feedback-btn" id="feedback-no">👎 NO</button>
+        </div>
+      </div>
+      <div class="feedback-message" id="feedback-message"></div>
+    </div>
+
+
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div class="bottom-nav">
+    <div class="nav-item active" data-tab="plan">
+      <div class="nav-icon">🗺</div>
+      <div class="nav-label">PLAN</div>
+    </div>
+    <div class="nav-item" data-tab="saved">
+      <div class="nav-icon">⭐</div>
+      <div class="nav-label">SAVED</div>
+    </div>
+    <div class="nav-item" data-tab="nearby">
+      <div class="nav-icon">📍</div>
+      <div class="nav-label">NEARBY</div>
+    </div>
+    <div class="nav-item" data-tab="settings">
+      <div class="nav-icon">⚙</div>
+      <div class="nav-label">SETTINGS</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const STATIONS = [
+  { name: "34th St – Herald Square", lines: ["N","Q","R","W","B","D","F","M"], id: "34th-herald" },
+  { name: "14th St – Union Square", lines: ["4","5","6","N","Q","R","W","L"], id: "14th-union" },
+  { name: "Times Sq – 42nd St", lines: ["1","2","3","7","N","Q","R","W","A","C","E","S"], id: "42nd-times" },
+  { name: "Grand Central – 42nd St", lines: ["4","5","6","7","S"], id: "42nd-gc" },
+  { name: "Columbus Circle – 59th St", lines: ["1","A","B","C","D"], id: "59th-cc" },
+  { name: "Fulton St", lines: ["2","3","4","5","A","C","J","Z"], id: "fulton" },
+  { name: "Atlantic Av – Barclays Ctr", lines: ["2","3","4","5","B","D","N","Q","R","W"], id: "atlantic-bc" },
+  { name: "Chambers St", lines: ["1","2","3","A","C","J","Z"], id: "chambers" },
+  { name: "Canal St", lines: ["1","A","C","E","N","Q","R","W","J","Z","6"], id: "canal" },
+  { name: "86th St", lines: ["4","5","6"], id: "86th-lex" },
+  { name: "125th St", lines: ["2","3","4","5","6","A","B","C","D"], id: "125th" },
+  { name: "Hoyt-Schermerhorn", lines: ["A","C","G"], id: "hoyt" },
+  { name: "Jay St – MetroTech", lines: ["A","C","F","R"], id: "jay" },
+  { name: "DeKalb Av", lines: ["B","D","N","Q","R","W"], id: "dekalb" },
+  { name: "Nostrand Av", lines: ["A","C"], id: "nostrand" },
+  { name: "Wall St", lines: ["4","5"], id: "wall" },
+  { name: "Bowling Green", lines: ["4","5"], id: "bowlinggreen" },
+  { name: "South Ferry", lines: ["1"], id: "southferry" },
+  { name: "Penn Station – 34th St", lines: ["1","2","3","A","C","E"], id: "34th-penn" },
+  { name: "W 4th St – Washington Sq", lines: ["A","B","C","D","E","F","M"], id: "w4th" },
+];
+
+const ROUTES = {
+  "34th-herald|14th-union": {
+    line: "N", direction: "Downtown",
+    optimalCar: 2, goodCars: [1,3],
+    totalCars: 10,
+    exitTarget: "NW corner staircase",
+    exitPosition: "front",
+    timeSave: "~60s",
+    steps: [
+      { title: "Board at 34th St – Herald Square", sub: "Take the <strong>N/Q/R/W</strong> downtown platform. Enter at the <strong>northern end</strong> of the platform." },
+      { title: "Get into Car 2", sub: "Position yourself in <strong>Car 2</strong> from the front (the second car from the train's engine). Doors will be on your right." },
+      { title: "Exit at 14th St – Union Square", sub: "Stay near the <strong>front doors</strong> of the car. Exit through the first set of doors for direct staircase access." },
+      { title: "Head to the L train", sub: "The exit puts you <strong>directly at the L train transfer</strong>, saving you a full platform walk." },
+    ],
+    platformTip: "Board at the northern end of the platform — the exit at Union Square puts you right at the stairs to the L.",
+    exitStart: "South exit",
+    exitEnd: "North staircase → L",
+    youPosition: 0.2,
+  },
+  "14th-union|34th-herald": {
+    line: "N", direction: "Uptown",
+    optimalCar: 8, goodCars: [7,9],
+    totalCars: 10,
+    exitTarget: "Main exit to 34th St",
+    exitPosition: "rear",
+    timeSave: "~45s",
+    steps: [
+      { title: "Board at 14th St – Union Square", sub: "Take the <strong>N/Q/R/W</strong> uptown platform. Walk to the <strong>southern end</strong> of the platform." },
+      { title: "Get into Car 8", sub: "Board <strong>Car 8</strong> from the front. This positions you near the rear of the train when heading uptown." },
+      { title: "Exit at 34th St – Herald Square", sub: "Exit through the rear doors of the car. You'll land directly at the <strong>main B'way staircase</strong>." },
+      { title: "Reach Herald Square", sub: "One flight up puts you at <strong>34th St & Broadway</strong>, right in front of Macy's." },
+    ],
+    platformTip: "Board at the southern end of the platform for the fastest exit at 34th Street.",
+    exitStart: "North exit",
+    exitEnd: "34th St & Broadway",
+    youPosition: 0.75,
+  },
+  "42nd-times|14th-union": {
+    line: "1", direction: "Downtown",
+    optimalCar: 1, goodCars: [2],
+    totalCars: 10,
+    exitTarget: "14th St exit (1/2/3)",
+    exitPosition: "front",
+    timeSave: "~50s",
+    steps: [
+      { title: "Board at Times Sq – 42nd St", sub: "Take the <strong>1/2/3</strong> downtown platform. Enter at the <strong>very front</strong> of the platform." },
+      { title: "Get into Car 1", sub: "Board the <strong>first car</strong> — the lead car of the train. This is the closest to the exit stairs at 14th St." },
+      { title: "Exit at 14th St", sub: "Doors open on the right. The <strong>front of Car 1</strong> aligns with the staircase to the 1/2/3 exit on 14th St." },
+      { title: "Street level", sub: "You'll exit near <strong>7th Ave & 14th St</strong>, directly by the crosswalk." },
+    ],
+    platformTip: "Stand at the very front of the platform. Car 1 lines up perfectly with the exit staircase.",
+    exitStart: "South staircase",
+    exitEnd: "7th Ave exit",
+    youPosition: 0.15,
+  },
+  "34th-penn|42nd-times": {
+    line: "1", direction: "Uptown",
+    optimalCar: 5, goodCars: [4,6],
+    totalCars: 10,
+    exitTarget: "Center platform, 42nd St",
+    exitPosition: "middle",
+    timeSave: "~30s",
+    steps: [
+      { title: "Board at 34th St – Penn Station", sub: "Take the <strong>1/2/3</strong> uptown platform. Head to the <strong>center</strong> of the platform." },
+      { title: "Get into Car 5", sub: "Board <strong>Car 5</strong> — the middle of the train — for the most central platform exit at 42nd St." },
+      { title: "Exit at 42nd St – Times Square", sub: "The middle car aligns with the <strong>main Times Square concourse</strong> stairs." },
+      { title: "Transfers", sub: "From here, the <strong>A/C/E, N/Q/R/W, and 7 train</strong> transfers are all within 60 feet." },
+    ],
+    platformTip: "Middle of the train, middle of the platform — gives you the most transfer options at Times Square.",
+    exitStart: "South exit",
+    exitEnd: "Times Sq Concourse",
+    youPosition: 0.5,
+  },
+};
+
+const QUICK = [
+  { from: "34th-herald", to: "14th-union", label: "34th → Union Sq" },
+  { from: "42nd-times", to: "14th-union", label: "Times Sq → 14th" },
+  { from: "34th-penn", to: "42nd-times", label: "Penn → Times Sq" },
+  { from: "14th-union", to: "34th-herald", label: "Union Sq → 34th" },
+];
+
+const LINE_COLORS = {
+  "1":"#ee352e","2":"#ee352e","3":"#ee352e","4":"#00933c","5":"#00933c","6":"#00933c",
+  "7":"#b933ad","A":"#0039a6","C":"#0039a6","E":"#0039a6","B":"#ff6319","D":"#ff6319",
+  "F":"#ff6319","M":"#ff6319","N":"#fccc0a","Q":"#fccc0a","R":"#fccc0a","W":"#fccc0a",
+  "L":"#a7a9ac","G":"#6cbe45","J":"#996633","Z":"#996633","S":"#808183","7":"#b933ad",
+};
+const LINE_TEXT = { "N":"#000","Q":"#000","R":"#000","W":"#000","L":"#000" };
+
+let fromId = null, toId = null;
+
+function stationById(id) { return STATIONS.find(s => s.id === id); }
+
+function renderQuickRoutes() {
+  const container = document.getElementById('quick-routes');
+  QUICK.forEach(q => {
+    const from = stationById(q.from);
+    const to = stationById(q.to);
+    if (!from || !to) return;
+    const routeKey = `${q.from}|${q.to}`;
+    const hasRoute = !!ROUTES[routeKey];
+    const chip = document.createElement('div');
+    chip.className = 'quick-chip';
+    const line = from.lines[0];
+    const bg = LINE_COLORS[line] || '#888';
+    const tc = LINE_TEXT[line] || '#fff';
+    chip.innerHTML = `<span class="line-badge" style="background:${bg};color:${tc}">${line}</span>${q.label}`;
+    chip.addEventListener('click', () => {
+      document.getElementById('from-input').value = from.name;
+      document.getElementById('to-input').value = to.name;
+      fromId = q.from;
+      toId = q.to;
+      doSearch();
+    });
+    container.appendChild(chip);
+  });
+}
+
+function buildSuggestions(query, excludeId) {
+  const q = query.toLowerCase().trim();
+  if (q.length < 1) return [];
+  return STATIONS.filter(s => s.id !== excludeId && s.name.toLowerCase().includes(q)).slice(0,5);
+}
+
+function showSuggestions(listEl, items, inputEl, isFrom) {
+  listEl.innerHTML = '';
+  if (items.length === 0) { listEl.classList.remove('show'); return; }
+  items.forEach(st => {
+    const div = document.createElement('div');
+    div.className = 'suggestion-item';
+    const lineStr = st.lines.slice(0,4).map(l => {
+      const bg = LINE_COLORS[l] || '#888';
+      const tc = LINE_TEXT[l] || '#fff';
+      return `<span style="background:${bg};color:${tc};display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;font-size:8px;font-weight:700;font-family:var(--mono);">${l}</span>`;
+    }).join('');
+    div.innerHTML = `<span class="s-icon">🚇</span><span class="s-name">${st.name}</span><span class="s-line" style="display:flex;gap:2px;">${lineStr}</span>`;
+    div.addEventListener('click', () => {
+      inputEl.value = st.name;
+      listEl.classList.remove('show');
+      if (isFrom) fromId = st.id;
+      else toId = st.id;
+    });
+    listEl.appendChild(div);
+  });
+  listEl.classList.add('show');
+}
+
+function setupInput(inputId, sugId, isFrom) {
+  const input = document.getElementById(inputId);
+  const sug = document.getElementById(sugId);
+  input.addEventListener('input', () => {
+    const exclude = isFrom ? toId : fromId;
+    const items = buildSuggestions(input.value, exclude);
+    showSuggestions(sug, items, input, isFrom);
+    if (isFrom) fromId = null; else toId = null;
+  });
+  input.addEventListener('focus', () => {
+    const exclude = isFrom ? toId : fromId;
+    const items = buildSuggestions(input.value, exclude);
+    showSuggestions(sug, items, input, isFrom);
+  });
+  document.addEventListener('click', e => {
+    if (!document.getElementById(isFrom ? 'from-wrap' : 'to-wrap').contains(e.target)) {
+      sug.classList.remove('show');
+    }
+  });
+}
+
+function renderTrainCars(totalCars, optimalCar, goodCars) {
+  const container = document.getElementById('train-cars');
+  container.innerHTML = '';
+  const head = document.createElement('div');
+  head.className = 'train-head';
+  container.appendChild(head);
+  for (let i = 1; i <= totalCars; i++) {
+    const car = document.createElement('div');
+    car.className = 'car';
+    if (i === optimalCar) {
+      car.classList.add('optimal');
+      const badge = document.createElement('div');
+      badge.className = 'optimal-badge';
+      badge.textContent = 'BOARD HERE';
+      car.appendChild(badge);
+    } else if (goodCars.includes(i)) {
+      car.classList.add('good');
+    }
+    const num = document.createElement('div');
+    num.className = 'car-num';
+    num.textContent = i;
+    car.appendChild(num);
+    container.appendChild(car);
+  }
+}
+
+function renderSteps(steps) {
+  const container = document.getElementById('steps');
+  container.innerHTML = '';
+  steps.forEach((s, i) => {
+    const div = document.createElement('div');
+    div.className = 'step';
+    div.innerHTML = `
+      <div class="step-num">${i+1}</div>
+      <div class="step-content">
+        <div class="step-title">${s.title}</div>
+        <div class="step-sub">${s.sub}</div>
+      </div>`;
+    container.appendChild(div);
+  });
+}
+
+
+const SAVED_KEY = 'exitiq_saved_routes_v1';
+
+function getSavedRoutes() {
+  try { return JSON.parse(localStorage.getItem(SAVED_KEY)) || []; }
+  catch { return []; }
+}
+
+function setSavedRoutes(routes) {
+  localStorage.setItem(SAVED_KEY, JSON.stringify(routes));
+}
+
+function currentRouteKey() {
+  return fromId && toId ? `${fromId}|${toId}` : null;
+}
+
+function isCurrentRouteSaved() {
+  const key = currentRouteKey();
+  return !!key && getSavedRoutes().some(r => r.key === key);
+}
+
+function updateSaveButton() {
+  const btn = document.getElementById('save-route-btn');
+  if (!btn) return;
+  if (isCurrentRouteSaved()) {
+    btn.textContent = '★ SAVED';
+    btn.classList.add('saved');
+  } else {
+    btn.textContent = '☆ SAVE';
+    btn.classList.remove('saved');
+  }
+}
+
+function toggleSaveCurrentRoute() {
+  const key = currentRouteKey();
+  if (!key) return;
+
+  const fromSt = stationById(fromId);
+  const toSt = stationById(toId);
+  const route = ROUTES[key];
+  let saved = getSavedRoutes();
+
+  if (saved.some(r => r.key === key)) {
+    saved = saved.filter(r => r.key !== key);
+  } else {
+    saved.unshift({
+      key,
+      fromId,
+      toId,
+      fromName: fromSt?.name || 'Origin',
+      toName: toSt?.name || 'Destination',
+      line: route?.line || fromSt?.lines?.[0] || 'A',
+      bestCar: route?.optimalCar || 5,
+      savedAt: new Date().toISOString()
+    });
+  }
+
+  setSavedRoutes(saved);
+  updateSaveButton();
+  renderSavedRoutes();
+}
+
+function renderSavedRoutes() {
+  const list = document.getElementById('saved-list');
+  if (!list) return;
+
+  const saved = getSavedRoutes();
+  list.innerHTML = '';
+
+  if (saved.length === 0) {
+    list.innerHTML = `<div class="empty-saved">No saved routes yet.<br>Plan a route, then tap <strong>☆ SAVE</strong> to keep it here.</div>`;
+    return;
+  }
+
+  saved.forEach(route => {
+    const card = document.createElement('div');
+    card.className = 'saved-route-card';
+    const bg = LINE_COLORS[route.line] || '#888';
+    const tc = LINE_TEXT[route.line] || '#fff';
+
+    card.innerHTML = `
+      <div class="saved-route-top">
+        <div class="saved-route-name">${route.fromName} → ${route.toName}</div>
+        <button class="remove-saved-btn" title="Remove saved route">×</button>
+      </div>
+      <div class="saved-route-meta">
+        <span class="line-badge" style="background:${bg};color:${tc};width:18px;height:18px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;font-family:var(--mono);">${route.line}</span>
+        <span>Best car: ${route.bestCar}</span>
+      </div>`;
+
+    card.addEventListener('click', () => {
+      fromId = route.fromId;
+      toId = route.toId;
+      document.getElementById('from-input').value = route.fromName;
+      document.getElementById('to-input').value = route.toName;
+      showTab('plan');
+      doSearch();
+    });
+
+    card.querySelector('.remove-saved-btn').addEventListener('click', e => {
+      e.stopPropagation();
+      setSavedRoutes(getSavedRoutes().filter(r => r.key !== route.key));
+      renderSavedRoutes();
+      updateSaveButton();
+    });
+
+    list.appendChild(card);
+  });
+}
+
+function showTab(tab) {
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.classList.toggle('active', item.dataset.tab === tab);
+  });
+
+  const savedSection = document.getElementById('saved-section');
+  const result = document.getElementById('result');
+  const loading = document.getElementById('loading');
+
+  if (tab === 'saved') {
+    savedSection.classList.add('show');
+    result.classList.remove('show');
+    loading.classList.remove('show');
+    renderSavedRoutes();
+  } else {
+    savedSection.classList.remove('show');
+  }
+}
+
+
+
+
+
+function resetFeedback() {
+  const yesBtn = document.getElementById('feedback-yes');
+  const noBtn = document.getElementById('feedback-no');
+  const message = document.getElementById('feedback-message');
+  if (!yesBtn || !noBtn || !message) return;
+  yesBtn.classList.remove('selected');
+  noBtn.classList.remove('selected');
+  message.classList.remove('show');
+  message.textContent = '';
+}
+
+function handleFeedback(isAccurate) {
+  const yesBtn = document.getElementById('feedback-yes');
+  const noBtn = document.getElementById('feedback-no');
+  const message = document.getElementById('feedback-message');
+  if (!yesBtn || !noBtn || !message) return;
+
+  yesBtn.classList.toggle('selected', isAccurate);
+  noBtn.classList.toggle('selected', !isAccurate);
+  message.classList.add('show');
+
+  if (isAccurate) {
+    message.textContent = 'Thanks — this confirms the recommendation and helps increase trust in this route.';
+  } else {
+    message.textContent = 'Thanks — in the next version, this would open a quick correction form so riders can suggest a better car or exit.';
+  }
+}
+
+function updateConfidence(isVerifiedRoute) {
+  const level = document.getElementById('confidence-level');
+  const source = document.getElementById('confidence-source');
+
+  if (isVerifiedRoute) {
+    level.textContent = 'HIGH';
+    level.className = 'confidence-pill high';
+    source.textContent = 'Verified beta route. Manually added route logic for the NYC beta.';
+  } else {
+    level.textContent = 'MEDIUM';
+    level.className = 'confidence-pill medium';
+    source.textContent = 'Estimated route. Based on available station layout logic; not manually verified yet.';
+  }
+}
+
+function doSearch() {
+  // Try to resolve by name if IDs not set
+  if (!fromId) {
+    const val = document.getElementById('from-input').value.toLowerCase();
+    const match = STATIONS.find(s => s.name.toLowerCase().includes(val) && val.length > 2);
+    if (match) fromId = match.id;
+  }
+  if (!toId) {
+    const val = document.getElementById('to-input').value.toLowerCase();
+    const match = STATIONS.find(s => s.name.toLowerCase().includes(val) && val.length > 2);
+    if (match) toId = match.id;
+  }
+
+  if (!fromId || !toId) {
+    document.getElementById('from-input').style.borderColor = 'var(--danger)';
+    return;
+  }
+
+  showTab('plan');
+  const loading = document.getElementById('loading');
+  const result = document.getElementById('result');
+  result.classList.remove('show');
+  loading.classList.add('show');
+
+  setTimeout(() => {
+    loading.classList.remove('show');
+    const routeKey = `${fromId}|${toId}`;
+    const route = ROUTES[routeKey];
+    const fromSt = stationById(fromId);
+    const toSt = stationById(toId);
+
+    document.getElementById('res-from-name').textContent = fromSt?.name || '—';
+    document.getElementById('res-to-name').textContent = toSt?.name || '—';
+
+    if (route) {
+      updateConfidence(true);
+      document.getElementById('res-time-save').textContent = route.timeSave + ' saved';
+      document.getElementById('res-direction').textContent = route.direction;
+
+      const lineBadge = document.getElementById('res-line-badge');
+      lineBadge.textContent = route.line;
+      lineBadge.style.background = LINE_COLORS[route.line] || '#888';
+      lineBadge.style.color = LINE_TEXT[route.line] || '#fff';
+      document.getElementById('res-line-name').textContent = route.line + ' train';
+
+      renderTrainCars(route.totalCars, route.optimalCar, route.goodCars);
+
+      // Platform
+      document.getElementById('exit-start-name').textContent = route.exitStart;
+      document.getElementById('exit-end-name').textContent = route.exitEnd;
+      document.getElementById('platform-tip').textContent = route.platformTip;
+      const youMarker = document.getElementById('you-marker');
+      youMarker.style.position = 'absolute';
+      youMarker.style.left = (route.youPosition * 100) + '%';
+      youMarker.style.transform = 'translateX(-50%)';
+
+      renderSteps(route.steps);
+    } else {
+      updateConfidence(false);
+      // Generic fallback
+      document.getElementById('res-time-save').textContent = '~30s saved';
+      document.getElementById('res-direction').textContent = 'Check direction';
+      const line = fromSt?.lines[0] || 'A';
+      const lineBadge = document.getElementById('res-line-badge');
+      lineBadge.textContent = line;
+      lineBadge.style.background = LINE_COLORS[line] || '#888';
+      lineBadge.style.color = LINE_TEXT[line] || '#fff';
+      document.getElementById('res-line-name').textContent = line + ' train';
+      renderTrainCars(10, 5, [4,6]);
+      document.getElementById('exit-start-name').textContent = 'South exit';
+      document.getElementById('exit-end-name').textContent = 'Target exit';
+      document.getElementById('platform-tip').textContent = 'Board near the middle of the platform for most flexibility.';
+      document.getElementById('you-marker').style.left = '50%';
+      renderSteps([
+        { title: `Board at ${fromSt?.name || 'origin'}`, sub: `Take the <strong>${line} train</strong> toward your destination.` },
+        { title: 'Board Car 5', sub: 'Middle car gives you the most flexibility on most NYC platforms.' },
+        { title: `Exit at ${toSt?.name || 'destination'}`, sub: 'Follow platform signs for the closest exit to your destination.' },
+      ]);
+    }
+    resetFeedback();
+    result.classList.add('show');
+    updateSaveButton();
+  }, 900);
+}
+
+// INIT
+renderQuickRoutes();
+renderSavedRoutes();
+setupInput('from-input', 'from-suggestions', true);
+setupInput('to-input', 'to-suggestions', false);
+
+document.getElementById('go-btn').addEventListener('click', doSearch);
+
+document.getElementById('save-route-btn').addEventListener('click', toggleSaveCurrentRoute);
+document.getElementById('feedback-yes').addEventListener('click', () => handleFeedback(true));
+document.getElementById('feedback-no').addEventListener('click', () => handleFeedback(false));
+
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => {
+    const tab = item.dataset.tab;
+    if (tab === 'saved') showTab('saved');
+    else showTab('plan');
+  });
+});
+
+
+document.getElementById('swap-btn').addEventListener('click', () => {
+  const fi = document.getElementById('from-input');
+  const ti = document.getElementById('to-input');
+  const tmp = fi.value; fi.value = ti.value; ti.value = tmp;
+  const tmpId = fromId; fromId = toId; toId = tmpId;
+});
+
+document.querySelectorAll('input').forEach(inp => {
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
+});
+</script>
+</body>
+</html>
