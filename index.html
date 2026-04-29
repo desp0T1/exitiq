@@ -952,6 +952,18 @@ const STATIONS = [
   { name: "South Ferry", lines: ["1"], id: "southferry" },
   { name: "Penn Station – 34th St", lines: ["1","2","3","A","C","E"], id: "34th-penn" },
   { name: "W 4th St – Washington Sq", lines: ["A","B","C","D","E","F","M"], id: "w4th" },
+
+  // NEW STATIONS
+  { name: "Bleecker St / Broadway–Lafayette", lines: ["6","B","D","F","M"], id: "bleecker-bway" },
+  { name: "Lexington Av–53rd St / 51st St", lines: ["E","M","6"], id: "lex-53-51" },
+  { name: "Court Sq", lines: ["7","E","M","G"], id: "court-sq" },
+  { name: "72nd St", lines: ["1","2","3"], id: "72nd" },
+  { name: "96th St", lines: ["1","2","3","6"], id: "96th" },
+  { name: "Brooklyn Bridge–City Hall", lines: ["4","5","6"], id: "bk-bridge" },
+  { name: "Roosevelt Av–Jackson Heights", lines: ["7","E","F","M","R"], id: "roosevelt" },
+  { name: "Sutphin Blvd–Archer Av–JFK", lines: ["E","J","Z"], id: "sutphin" },
+  { name: "Jamaica Center–Parsons/Archer", lines: ["E","J","Z"], id: "jamaica" },
+  { name: "Flushing–Main St", lines: ["7"], id: "flushing" },
 ];
 
 const ROUTES = {
@@ -1026,6 +1038,77 @@ const ROUTES = {
     exitStart: "South exit",
     exitEnd: "Times Sq Concourse",
     youPosition: 0.5,
+  },
+  "42nd-times|59th-cc": {
+  line: "A",
+  direction: "Uptown",
+  optimalCar: 1,
+  goodCars: [2],
+  totalCars: 10,
+  timeSave: "~40s",
+  steps: [
+    { title: "Board at Times Square", sub: "Take the <strong>A/C</strong> uptown." },
+    { title: "Board front car", sub: "Front aligns with Columbus Circle exits." },
+    { title: "Exit at 59th St", sub: "Direct access to main concourse." }
+  ],
+  platformTip: "Front of train gives fastest exit.",
+  exitStart: "South end",
+  exitEnd: "Columbus Circle",
+  youPosition: 0.15
+},
+
+"59th-cc|42nd-times": {
+  line: "A",
+  direction: "Downtown",
+  optimalCar: 9,
+  goodCars: [8],
+  totalCars: 10,
+  timeSave: "~35s",
+  steps: [
+    { title: "Board at 59th St", sub: "Take <strong>A/C</strong> downtown." },
+    { title: "Board rear car", sub: "Closer to Times Square exits." },
+    { title: "Exit at Times Square", sub: "Near transfer area." }
+  ],
+  platformTip: "Rear of train reduces walking distance.",
+  exitStart: "North end",
+  exitEnd: "Times Sq concourse",
+  youPosition: 0.8
+},
+
+"42nd-times|34th-penn": {
+  line: "1",
+  direction: "Downtown",
+  optimalCar: 5,
+  goodCars: [4,6],
+  totalCars: 10,
+  timeSave: "~25s",
+  steps: [
+    { title: "Board at Times Sq", sub: "Take <strong>1 train</strong> downtown." },
+    { title: "Board middle car", sub: "Best for Penn Station exits." },
+    { title: "Exit at Penn Station", sub: "Central access to platforms." }
+  ],
+  platformTip: "Middle car = best balance.",
+  exitStart: "North",
+  exitEnd: "Penn Station",
+  youPosition: 0.5
+},
+
+"roosevelt|42nd-times": {
+  line: "7",
+  direction: "Manhattan-bound",
+  optimalCar: 3,
+  goodCars: [2,4],
+  totalCars: 11,
+  timeSave: "~50s",
+  steps: [
+    { title: "Board at Jackson Heights", sub: "Take <strong>7 train</strong> to Manhattan." },
+    { title: "Board front section", sub: "Closer to Times Sq exits." },
+    { title: "Exit at Times Sq", sub: "Near transfer hub." }
+  ],
+  platformTip: "Front section reduces walking.",
+  exitStart: "Queens side",
+  exitEnd: "Times Sq",
+  youPosition: 0.25
   },
 };
 
